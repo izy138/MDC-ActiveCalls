@@ -346,6 +346,62 @@ async function geocodeAddress(rawAddress) {
   return null;
 }
 
+// ─── FHP Traffic Incidents Scraper ───────────────────────────────────────────
+// Florida Highway Patrol live crash/road condition report. Lat/lng in page — no geocoding.
+// Filter to Miami-Dade county only.
+
+async function scrapeFHPIncidents() {
+  const { data: html } = await axios.get(
+    'https://trafficincidents.flhsmv.gov/SmartWebClient/CadView.aspx',
+    {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MiamiFireMap/1.0)' },
+      timeout: 15000,
+    }
+  );
+
+  const $ = cheerio.load(html);
+  const incidents = [];
+
+  $('table tr').each((_, row) => {
+    const cells = $(row).find('td');
+    if (cells.length < 9) return;
+
+    const county = $(cells[4]).text().trim().toUpperCase();
+    if (!county.includes('MIAMI-DADE')) return;
+
+    const incType   = $(cells[0]).text().trim();
+    const received  = $(cells[1]).text().trim();
+    const location  = $(cells[5]).text().trim();
+    const remarks   = $(cells[6]).text().trim();
+    const latText   = $(cells[7]).text().trim();
+    const lngText   = $(cells[8]).text().trim();
+
+    const lat = parseFloat(latText);
+    const lng = parseFloat(lngText);
+
+    if (!incType || !location) return;
+    if (isNaN(lat) || isNaN(lng)) return;
+    if (lat < 25.1 || lat > 26.2 || lng < -80.9 || lng > -80.0) return;
+
+    incidents.push({
+      source:   'FHP',
+      id:       `fhp-${received}-${location}`.replace(/\s+/g, '-'),
+      incType,
+      address:  location,
+      remarks,
+      received,
+      county,
+      zone:     'FHP',
+      units:    '',
+      fc:       '',
+      rcvd:     received ? received.split(' ')[1] || received : '',
+      coords:   { lat, lng },
+    });
+  });
+
+  return incidents;
+}
+
 // ─── App setup ────────────────────────────────────────────────────────────────
 
 app.use(cors());
@@ -358,25 +414,43 @@ app.get('/api/calls', rateLimitMiddleware, async (req, res) => {
     const cached = callCache.get('calls');
     if (cached) return res.json(cached);
 
-    console.log('Fetching fresh data from Miami-Dade...');
-    const calls = await scrapeCalls();
-    console.log(`Found ${calls.length} calls. Geocode usage today: ${geocodeBudget.count}/${CONFIG.GEOCODE_DAILY_LIMIT}`);
+    console.log('Fetching fresh data from Miami-Dade Fire + FHP...');
 
-    const geocoded = await Promise.all(
+    const [fireResult, fhpResult] = await Promise.allSettled([
+      scrapeCalls(),
+      scrapeFHPIncidents(),
+    ]);
+
+    const calls = fireResult.status === 'fulfilled' ? fireResult.value : [];
+    const fhp = fhpResult.status === 'fulfilled' ? fhpResult.value : [];
+
+    if (fireResult.status === 'rejected')
+      console.error('Miami-Dade scrape failed:', fireResult.reason?.message);
+    if (fhpResult.status === 'rejected')
+      console.error('FHP scrape failed:', fhpResult.reason?.message);
+
+    // Geocode only MDFR addresses; FHP incidents have built-in lat/lng and never use the geocode API or count toward budget.
+    console.log(`Fire calls: ${calls.length}, FHP incidents: ${fhp.length}. Geocode (MDFR only): ${geocodeBudget.count}/${CONFIG.GEOCODE_DAILY_LIMIT}`);
+
+    const geocodedFire = await Promise.all(
       calls.map(async (call) => {
         const coords = await geocodeAddress(call.address);
-        return { ...call, coords };
+        return { ...call, coords, source: 'MDFR' };
       })
     );
 
+    const allCalls = [...geocodedFire, ...fhp];
+
     const result = {
-      calls: geocoded,
+      calls: allCalls,
       lastUpdated: new Date().toISOString(),
-      total: geocoded.length,
+      total: allCalls.length,
+      sources: { mdfr: geocodedFire.length, fhp: fhp.length },
       geocodeBudget: {
         used: geocodeBudget.count,
         limit: CONFIG.GEOCODE_DAILY_LIMIT,
         limited: !geocodeAllowed(),
+        appliesTo: 'MDFR',
       },
     };
 
@@ -384,7 +458,7 @@ app.get('/api/calls', rateLimitMiddleware, async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('Error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch fire calls', message: err.message });
+    res.status(500).json({ error: 'Failed to fetch calls', message: err.message });
   }
 });
 
@@ -409,6 +483,7 @@ app.get('/health', async (req, res) => {
       limit: CONFIG.GEOCODE_DAILY_LIMIT,
       remaining: Math.max(0, CONFIG.GEOCODE_DAILY_LIMIT - geocodeBudget.count),
       limited: !geocodeAllowed(),
+      appliesTo: 'MDFR',
     },
     rateLimits: {
       perIpPerMin: CONFIG.RATE_LIMIT_PER_IP_PER_MIN,

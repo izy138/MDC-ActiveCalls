@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Miami-Dade Fire Rescue — Live Dispatch Map</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700&family=Barlow:wght@300;400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
   <style>
@@ -22,6 +22,7 @@
       --muted:     #4a6080;
       --mono:      'Share Tech Mono', monospace;
       --sans:      'Barlow Condensed', sans-serif;
+      --read:      'Barlow', sans-serif;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,7 +30,7 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: var(--sans);
+      font-family: var(--read);
       height: 100vh;
       overflow: hidden;
       display: flex;
@@ -63,7 +64,7 @@
     .logo-icon svg { width: 36px; height: 36px; }
 
     h1 {
-      font-family: var(--sans);
+      font-family: var(--read);
       font-size: 20px;
       font-weight: 700;
       letter-spacing: 0.08em;
@@ -92,8 +93,8 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      font-family: var(--mono);
-      font-size: 11px;
+      font-family: var(--read);
+      font-size: 12px;
       color: var(--muted);
     }
 
@@ -114,13 +115,13 @@
     }
 
     #last-update {
-      font-family: var(--mono);
-      font-size: 11px;
+      font-family: var(--read);
+      font-size: 12px;
       color: var(--muted);
     }
 
     #total-count {
-      font-family: var(--mono);
+      font-family: var(--read);
       font-size: 13px;
       color: var(--accent2);
       font-weight: bold;
@@ -135,13 +136,14 @@
 
     /* ── Sidebar ── */
     #sidebar {
-      width: 320px;
+      width: 380px;
       flex-shrink: 0;
       background: var(--surface);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      font-family: var(--read);
     }
 
     .sidebar-toolbar {
@@ -153,8 +155,8 @@
     }
 
     .filter-btn {
-      font-family: var(--sans);
-      font-size: 11px;
+      font-family: var(--read);
+      font-size: 12px;
       font-weight: 600;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -188,9 +190,18 @@
       scrollbar-color: var(--border) transparent;
     }
 
+    .filter-total {
+      padding: 10px 14px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
     .zone-header {
       padding: 8px 14px 4px;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.25em;
       text-transform: uppercase;
@@ -220,8 +231,8 @@
     }
 
     .call-type {
-      font-size: 13px;
-      font-weight: 700;
+      font-size: 14px;
+      font-weight: 600;
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
@@ -229,32 +240,33 @@
     .call-type.fire { color: var(--accent); }
     .call-type.medical { color: var(--blue); }
     .call-type.traffic { color: var(--amber); }
+    .call-type.fhp { color: var(--amber); }
     .call-type.other { color: var(--text); }
 
     .call-address {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--text);
       margin-top: 2px;
       line-height: 1.3;
     }
 
     .call-units {
-      font-family: var(--mono);
-      font-size: 10px;
+      font-family: var(--read);
+      font-size: 11px;
       color: var(--muted);
       margin-top: 3px;
     }
 
     .call-time {
-      font-family: var(--mono);
-      font-size: 11px;
+      font-family: var(--read);
+      font-size: 12px;
       color: var(--muted);
       text-align: right;
     }
 
     .call-fc {
-      font-family: var(--mono);
-      font-size: 10px;
+      font-family: var(--read);
+      font-size: 11px;
       color: var(--accent2);
       text-align: right;
     }
@@ -296,7 +308,7 @@
       background: var(--surface);
       border: 1px solid var(--border);
       color: var(--text);
-      font-family: var(--sans);
+      font-family: var(--read);
       font-size: 12px;
       font-weight: 600;
       letter-spacing: 0.1em;
@@ -318,20 +330,23 @@
       position: absolute;
       bottom: 20px;
       left: 20px;
-      background: rgba(13,18,25,0.92);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 12px 14px;
-      z-index: 10;
-      backdrop-filter: blur(4px);
+      background: rgba(13,18,25,0.96);
+      border: 1px solid rgba(74,96,128,0.6);
+      border-radius: 6px;
+      padding: 12px 16px;
+      z-index: 1000;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+      font-family: var(--read);
     }
 
     .legend-title {
-      font-size: 10px;
+      font-family: var(--read);
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.2em;
       text-transform: uppercase;
-      color: var(--muted);
+      color: #8aa0b8;
       margin-bottom: 8px;
     }
 
@@ -339,8 +354,10 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 12px;
+      font-size: 13px;
       margin-bottom: 5px;
+      color: #d0dce8;
+      font-family: var(--read);
     }
 
     .legend-dot {
@@ -348,6 +365,7 @@
       height: 10px;
       border-radius: 50%;
       flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.3);
     }
 
     /* ── Loading overlay ── */
@@ -359,8 +377,8 @@
       justify-content: center;
       background: rgba(8,12,16,0.85);
       z-index: 999;
-      font-family: var(--mono);
-      font-size: 13px;
+      font-family: var(--read);
+      font-size: 14px;
       color: var(--muted);
       letter-spacing: 0.1em;
       flex-direction: column;
@@ -395,7 +413,7 @@
     }
 
     .iw-type {
-      font-family: var(--sans);
+      font-family: var(--read);
       font-size: 14px;
       font-weight: 700;
       letter-spacing: 0.06em;
@@ -404,7 +422,7 @@
     }
 
     .iw-address {
-      font-family: var(--sans);
+      font-family: var(--read);
       font-size: 13px;
       color: #a0b8c8;
       margin-bottom: 6px;
@@ -413,8 +431,8 @@
     .iw-row {
       display: flex;
       justify-content: space-between;
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 11px;
+      font-family: var(--read);
+      font-size: 12px;
       color: #4a6080;
       margin-bottom: 3px;
     }
@@ -435,7 +453,7 @@
       </svg>
     </div>
     <div>
-      <h1>Miami-Dade Fire Rescue <span>Live Dispatch — Active Calls</span></h1>
+      <h1>Miami-Dade Fire Rescue and Traffic<span>Live Dispatch — Active Calls</span></h1>
     </div>
   </div>
   <div class="header-right">
@@ -452,9 +470,9 @@
   <div id="sidebar">
     <div class="sidebar-toolbar">
       <button class="filter-btn active" data-type="ALL">All</button>
-      <button class="filter-btn" data-type="MEDICAL">Medical</button>
-      <button class="filter-btn" data-type="FIRE STRUCTURE">Fire</button>
       <button class="filter-btn" data-type="TRAFFIC ACCIDENT">Traffic</button>
+      <button class="filter-btn" data-type="FIRE STRUCTURE">Fire</button>
+      <button class="filter-btn" data-type="MEDICAL">Medical</button>
     </div>
     <div id="call-list"></div>
   </div>
@@ -472,6 +490,7 @@
       <div class="legend-item"><div class="legend-dot" style="background:#29b6f6"></div> Medical</div>
       <div class="legend-item"><div class="legend-dot" style="background:#ffaa00"></div> Traffic Accident</div>
       <div class="legend-item"><div class="legend-dot" style="background:#a0b8c8"></div> Other</div>
+      <!-- <div class="legend-item"><div class="legend-dot" style="background:#ffaa00"></div> FHP Traffic</div> -->
     </div>
 
     <div class="map-overlay">
@@ -486,13 +505,29 @@
   const REFRESH_INTERVAL = 60000;
 
   // Map bounds: [south, west], [north, east]. Edit these four numbers only.
-  const MAP_SOUTH = 25.36; //increase to zoom
+  const MAP_SOUTH = 25.46; //increase to zoom
   const MAP_NORTH = 25.95; //decrease to zoom
   const MAP_WEST = -80.45;
   const MAP_EAST = -80.05;
   const MAP_BOUNDS = L.latLngBounds([MAP_SOUTH, MAP_WEST], [MAP_NORTH, MAP_EAST]);
-  const MAP_ZOOM_MIN = 10.25;  // most zoomed out (user can't go further out)
+  const MAP_ZOOM_MIN = 10.39;  // most zoomed out (user can't go further out)
   const MAP_ZOOM_MAX = 14;  // most zoomed in (user can't go further in)
+
+  // Fallback coords for MDFR calls that couldn't be geocoded — approximate zone centers in Miami-Dade
+  const ZONE_CENTERS = {
+    NORTH:  { lat: 25.92, lng: -80.25 },
+    CENTRAL: { lat: 25.77, lng: -80.21 },
+    SOUTH:  { lat: 25.58, lng: -80.35 },
+    EAST:   { lat: 25.75, lng: -80.12 },
+    MEDCOM: { lat: 25.77, lng: -80.21 },
+    UNKNOWN: { lat: 25.76, lng: -80.21 },
+  };
+  function getCoordsForCall(call) {
+    if (call.coords) return { coords: call.coords, approximate: false };
+    if (call.source === 'FHP' || call.zone === 'FHP') return null;
+    const center = ZONE_CENTERS[call.zone] || ZONE_CENTERS.UNKNOWN;
+    return center ? { coords: center, approximate: true } : null;
+  }
 
   let map;
   let markers = [];
@@ -503,11 +538,9 @@
   function initMap() {
     map = L.map('map-container', {
       center: MAP_BOUNDS.getCenter(),
-      zoom: MAP_ZOOM_MIN,
+      zoom: 11,
       minZoom: MAP_ZOOM_MIN,
       maxZoom: MAP_ZOOM_MAX,
-      maxBounds: MAP_BOUNDS,
-      maxBoundsViscosity: 1,
     });
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -516,7 +549,18 @@
       maxZoom: MAP_ZOOM_MAX,
     }).addTo(map);
 
-    map.setView(MAP_BOUNDS.getCenter(), MAP_ZOOM_MIN);
+    // Fit view exactly to bounds once the map container has real dimensions (fixes flex/layout timing)
+    function zoomToBounds() {
+      map.invalidateSize();
+      map.fitBounds(MAP_BOUNDS, { maxZoom: MAP_ZOOM_MAX, animate: false });
+    }
+    map.whenReady(function() {
+      requestAnimationFrame(function() {
+        zoomToBounds();
+        // In case container was not sized yet (e.g. in a tab), fit again after a short delay
+        setTimeout(zoomToBounds, 100);
+      });
+    });
 
     document.getElementById('refresh-btn').addEventListener('click', () => fetchCalls(true));
     setupFilters();
@@ -554,40 +598,65 @@
     markers.forEach(m => map.removeLayer(m.marker));
     markers = [];
 
-    const filtered = activeFilter === 'ALL'
+    let filtered = activeFilter === 'ALL'
       ? calls
-      : calls.filter(c => c.incType.toUpperCase().includes(activeFilter));
+      : activeFilter === 'FIRE STRUCTURE'
+        ? calls.filter(c => c.incType.toUpperCase().includes('FIRE'))
+        : activeFilter === 'TRAFFIC ACCIDENT'
+          ? calls.filter(c => c.incType.toUpperCase().includes('TRAFFIC ACCIDENT') || c.source === 'FHP')
+          : calls.filter(c => c.incType.toUpperCase().includes(activeFilter));
+
+    const seenIds = new Set();
+    filtered = filtered.filter(c => {
+      if (seenIds.has(c.id)) return false;
+      seenIds.add(c.id);
+      return true;
+    });
 
     renderSidebar(filtered);
 
     filtered.forEach(call => {
-      if (!call.coords) return;
+      const resolved = getCoordsForCall(call);
+      if (!resolved) return;
 
-      const color = getColor(call.incType);
-      const size = call.incType.toLowerCase().includes('fire') ? 14 : 10;
+      const { coords, approximate } = resolved;
+      const isFHP = call.source === 'FHP' || call.zone === 'FHP';
+      const color = isFHP ? '#ffaa00' : getColor(call.incType, call.source);
+      const isFireOrTraffic = call.incType.toLowerCase().includes('fire') || call.incType.toLowerCase().includes('traffic') || call.incType.toLowerCase().includes('accident');
+      const size = (isFHP || isFireOrTraffic) ? 14 : 10;
       const icon = L.divIcon({
         className: 'custom-marker',
-        html: `<span style="background:${color};width:${size}px;height:${size}px;border:1.5px solid #fff;border-radius:50%;display:block;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></span>`,
+        html: `<span style="background:${color};width:${size}px;height:${size}px;border:1.5px solid #fff;border-radius:50%;display:block;box-shadow:0 1px 4px rgba(0,0,0,0.4)${approximate ? ';border-style:dashed' : ''}"></span>`,
         iconSize: [size, size],
         iconAnchor: [size / 2, size / 2],
       });
 
-      const marker = L.marker([call.coords.lat, call.coords.lng], { icon }).addTo(map);
-      marker.bindPopup(buildPopupContent(call), { className: 'custom-popup' });
-      marker.on('click', () => marker.openPopup());
+      const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(map);
+      marker.bindPopup(buildPopupContent(call, approximate), { className: 'custom-popup' });
+      marker.on('click', () => {
+        map.setView([coords.lat, coords.lng], 15);
+        marker.openPopup();
+        const card = document.querySelector(`.call-card[data-id="${call.id}"]`);
+        if (card) setActiveCard(card);
+      });
       markers.push({ marker, call });
     });
   }
 
-  function buildPopupContent(call) {
-    const color = getColor(call.incType);
+  function buildPopupContent(call, approximate) {
+    const color = getColor(call.incType, call.source);
+    const sourceBadge = call.source === 'FHP'
+      ? '<span style="font-size:10px;background:rgba(255,170,0,0.2);color:#ffaa00;padding:2px 6px;border-radius:2px;margin-left:6px">FHP</span>'
+      : '<span style="font-size:10px;background:#1a2535;color:#ff6b35;padding:2px 6px;border-radius:2px;margin-left:6px">MDFR</span>';
     return `
       <div class="info-window">
-        <div class="iw-type" style="color:${color}">${call.incType}</div>
+        <div class="iw-type" style="color:${color};display:flex;align-items:center">${call.incType}${sourceBadge}</div>
         <div class="iw-address">${call.address}</div>
+        ${approximate ? '<div class="iw-row"><span>LOCATION</span><span style="color:#ffaa00">Approximate (zone)</span></div>' : ''}
+        ${call.remarks ? `<div class="iw-row"><span>REMARKS</span><span style="color:#c8d8e8">${call.remarks}</span></div>` : ''}
         ${call.fc ? `<div class="iw-row"><span>CODE</span><span>${call.fc}</span></div>` : ''}
-        <div class="iw-row"><span>RECEIVED</span><span>${call.rcvd}</span></div>
-        <div class="iw-row"><span>ZONE</span><span>${call.zone}</span></div>
+        <div class="iw-row"><span>RECEIVED</span><span>${call.rcvd || call.received || '—'}</span></div>
+        ${call.zone !== 'FHP' ? `<div class="iw-row"><span>ZONE</span><span>${call.zone}</span></div>` : ''}
         <div class="iw-row"><span>UNITS</span><span>${call.units || '—'}</span></div>
       </div>
     `;
@@ -598,62 +667,127 @@
     if (entry) entry.marker.openPopup();
   }
 
+  function getFilterTotalLabel(filter, count) {
+    if (filter === 'ALL') return `${count} total call${count !== 1 ? 's' : ''}`;
+    if (filter === 'MEDICAL') return `${count} total medical call${count !== 1 ? 's' : ''}`;
+    if (filter === 'FIRE STRUCTURE') return `${count} total fire call${count !== 1 ? 's' : ''}`;
+    if (filter === 'TRAFFIC ACCIDENT') return `${count} total traffic call${count !== 1 ? 's' : ''}`;
+    return `${count} call${count !== 1 ? 's' : ''}`;
+  }
+
+  const TRAFFIC_HIGHWAY_ORDER = ['Florida Turnpike', 'I-95', 'SR-826', 'SR-836', 'Other'];
+  const TRAFFIC_DIRECTION_ORDER = ['NB', 'SB', 'WB', 'EB'];
+
+  function getTrafficHighwayHeader(call) {
+    const addr = (call.address || '').toUpperCase();
+    if (addr.includes('TURNPIKE') || addr.includes('TPKE')) return 'Florida Turnpike';
+    if (addr.includes('I-95') || addr.includes('I95')) return 'I-95';
+    if (addr.includes('SR-826') || addr.includes('SR 826')) return 'SR-826';
+    if (addr.includes('SR-836') || addr.includes('SR 836')) return 'SR-836';
+    return 'Other';
+  }
+
+  function trafficDirectionSortOrder(call) {
+    const text = `${call.address || ''} ${call.remarks || ''}`.toUpperCase();
+    if (text.includes('NB') || text.includes('NORTHBOUND')) return 0;
+    if (text.includes('SB') || text.includes('SOUTHBOUND')) return 1;
+    if (text.includes('WB') || text.includes('WESTBOUND')) return 2;
+    if (text.includes('EB') || text.includes('EASTBOUND')) return 3;
+    return 4;
+  }
+
+  function renderCallCard(call, list) {
+    const card = document.createElement('div');
+    card.className = `call-card${!call.coords ? ' no-coords' : ''}`;
+    card.dataset.id = call.id;
+
+    const typeClass = call.source === 'FHP' ? 'fhp'
+      : call.incType.toLowerCase().includes('fire') ? 'fire'
+      : call.incType.toLowerCase().includes('medical') ? 'medical'
+      : call.incType.toLowerCase().includes('traffic') ? 'traffic'
+      : 'other';
+
+    card.innerHTML = `
+      <div>
+        <div class="call-type ${typeClass}">${call.incType}</div>
+        <div class="call-address">${call.address}</div>
+        <div class="call-units">${call.units || '—'}</div>
+      </div>
+      <div>
+        <div class="call-time">${call.rcvd || call.received || ''}</div>
+        ${call.fc ? `<div class="call-fc">${call.fc}</div>` : ''}
+      </div>
+    `;
+
+    const resolved = getCoordsForCall(call);
+    if (resolved) {
+      card.addEventListener('click', () => {
+        map.setView([resolved.coords.lat, resolved.coords.lng], 15);
+        openPopupForCall(call);
+        setActiveCard(card);
+      });
+    }
+
+    list.appendChild(card);
+  }
+
   function renderSidebar(calls) {
     const list = document.getElementById('call-list');
     list.innerHTML = '';
 
+    const seenIds = new Set();
+    const deduped = calls.filter(c => {
+      if (seenIds.has(c.id)) return false;
+      seenIds.add(c.id);
+      return true;
+    });
+
+    const totalEl = document.createElement('div');
+    totalEl.className = 'filter-total';
+    totalEl.textContent = getFilterTotalLabel(activeFilter, deduped.length);
+    list.appendChild(totalEl);
+
+    if (activeFilter === 'TRAFFIC ACCIDENT') {
+      const byHighway = {};
+      deduped.forEach(c => {
+        const h = getTrafficHighwayHeader(c);
+        if (!byHighway[h]) byHighway[h] = [];
+        byHighway[h].push(c);
+      });
+
+      TRAFFIC_HIGHWAY_ORDER.forEach(highway => {
+        if (!byHighway[highway] || byHighway[highway].length === 0) return;
+        const header = document.createElement('div');
+        header.className = 'zone-header';
+        header.textContent = `${highway} — ${byHighway[highway].length} Call${byHighway[highway].length !== 1 ? 's' : ''}`;
+        list.appendChild(header);
+        const sorted = [...byHighway[highway]].sort((a, b) => trafficDirectionSortOrder(a) - trafficDirectionSortOrder(b));
+        sorted.forEach(call => renderCallCard(call, list));
+      });
+      return;
+    }
+
     const byZone = {};
-    calls.forEach(c => {
+    deduped.forEach(c => {
       if (!byZone[c.zone]) byZone[c.zone] = [];
       byZone[c.zone].push(c);
     });
 
-    const zoneOrder = ['NORTH', 'CENTRAL', 'SOUTH', 'EAST', 'MEDCOM', 'UNKNOWN'];
+    const zoneOrder = ['NORTH', 'CENTRAL', 'SOUTH', 'EAST', 'MEDCOM', 'FHP', 'UNKNOWN'];
     zoneOrder.forEach(zone => {
       if (!byZone[zone]) return;
       const header = document.createElement('div');
       header.className = 'zone-header';
       header.textContent = `${zone} — ${byZone[zone].length} Call${byZone[zone].length !== 1 ? 's' : ''}`;
       list.appendChild(header);
-
-      byZone[zone].forEach(call => {
-        const card = document.createElement('div');
-        card.className = `call-card${!call.coords ? ' no-coords' : ''}`;
-        card.dataset.id = call.id;
-
-        const typeClass = call.incType.toLowerCase().includes('fire') ? 'fire'
-          : call.incType.toLowerCase().includes('medical') ? 'medical'
-          : call.incType.toLowerCase().includes('traffic') ? 'traffic'
-          : 'other';
-
-        card.innerHTML = `
-          <div>
-            <div class="call-type ${typeClass}">${call.incType}</div>
-            <div class="call-address">${call.address}</div>
-            <div class="call-units">${call.units || '—'}</div>
-          </div>
-          <div>
-            <div class="call-time">${call.rcvd}</div>
-            ${call.fc ? `<div class="call-fc">${call.fc}</div>` : ''}
-          </div>
-        `;
-
-        if (call.coords) {
-          card.addEventListener('click', () => {
-            map.setView([call.coords.lat, call.coords.lng], 15);
-            openPopupForCall(call);
-            setActiveCard(card);
-          });
-        }
-
-        list.appendChild(card);
-      });
+      byZone[zone].forEach(call => renderCallCard(call, list));
     });
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
-  function getColor(incType) {
-    const t = incType.toLowerCase();
+  function getColor(incType, source) {
+    if (source === 'FHP') return '#ffaa00';
+    const t = (incType || '').toLowerCase();
     if (t.includes('fire')) return '#e8320a';
     if (t.includes('medical') || t.includes('trauma')) return '#29b6f6';
     if (t.includes('traffic') || t.includes('accident')) return '#ffaa00';

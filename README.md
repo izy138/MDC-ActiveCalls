@@ -13,8 +13,6 @@ An interactive, real-time map of active Miami-Dade Fire Rescue calls using OpenS
 
 **Alternative:** A Google Maps version (with traffic layer) lives in `version-googlemaps/`. See that folder’s README to use it.
 
-
-
 ## Data source
 
 **Miami-Dade Fire Rescue CAD Active Calls:**  

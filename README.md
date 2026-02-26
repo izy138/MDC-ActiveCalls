@@ -13,9 +13,15 @@ An interactive, real-time map of active Miami-Dade Fire Rescue calls using OpenS
 
 **Alternative:** A Google Maps version (with traffic layer) lives in `version-googlemaps/`. See that folder’s README to use it.
 
+<<<<<<< HEAD
 ## Data sources
 
 **Miami-Dade Fire Rescue CAD Active Calls**  
+=======
+## Data source
+
+**Miami-Dade Fire Rescue CAD Active Calls:**  
+>>>>>>> 56397a6af05757df33265783e785f848f2aeffff
 https://www.miamidade.gov/firecalls/calls.html
 
 **Florida Highway Patrol — Live Traffic Crash and Road Condition Report (FLHSMV)**  

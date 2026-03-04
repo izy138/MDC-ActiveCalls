@@ -630,6 +630,39 @@
       height: 14px;
     }
 
+    .sidebar-close-edge-tab {
+      display: none;
+      position: fixed;
+      left: min(340px, 85vw);
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 64px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-right: none;
+      border-radius: 8px 0 0 8px;
+      z-index: 1650;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      padding: 0 0 0 4px;
+      box-shadow: -2px 0 8px rgba(0,0,0,0.3);
+      transition: background 0.2s, box-shadow 0.2s;
+      color: var(--text);
+    }
+    .sidebar-close-edge-tab:hover {
+      background: var(--border);
+      box-shadow: -2px 0 12px rgba(0,0,0,0.4);
+    }
+    .sidebar-close-edge-tab:active {
+      background: var(--border);
+    }
+    .sidebar-close-edge-tab svg {
+      width: 14px;
+      height: 14px;
+    }
+
     @media (max-width: 768px) {
       .sidebar-toggle {
         display: flex;
@@ -640,6 +673,10 @@
       }
       body.sidebar-open .sidebar-edge-tab {
         display: none;
+      }
+
+      body.sidebar-open .sidebar-close-edge-tab {
+        display: flex;
       }
 
       .main {
@@ -729,8 +766,8 @@
       }
       .legend {
         left: auto;
-        right: 7px;
-        bottom: 24px;
+        right: 10px;
+        bottom: calc(90px + env(safe-area-inset-bottom, 0px));
         padding: 8px 12px;
         font-size: 11px;
       }
@@ -738,8 +775,24 @@
         font-size: 12px;
       }
 
+      .sidebar-toolbar {
+        flex-wrap: nowrap;
+      }
+      .sidebar-filters {
+        flex-wrap: nowrap;
+        flex: 1;
+        min-width: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .sidebar-filters::-webkit-scrollbar {
+        display: none;
+      }
       .sidebar-close {
         display: block;
+        flex-shrink: 0;
+        
       }
     }
   </style>
@@ -803,6 +856,11 @@
 <button class="sidebar-edge-tab" id="sidebar-edge-tab" aria-label="Open call list" type="button">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <polyline points="9 18 15 12 9 6"/>
+  </svg>
+</button>
+<button class="sidebar-close-edge-tab" id="sidebar-close-edge-tab" aria-label="Close call list" type="button">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="15 18 9 12 15 6"/>
   </svg>
 </button>
 <div class="main">
@@ -1240,10 +1298,12 @@
     }
 
     const closeBtn = document.getElementById('sidebar-close');
+    const closeEdgeTab = document.getElementById('sidebar-close-edge-tab');
     if (toggle) toggle.addEventListener('click', toggleSidebar);
     if (backdrop) backdrop.addEventListener('click', closeSidebar);
     if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
     if (edgeTab) edgeTab.addEventListener('click', openSidebar);
+    if (closeEdgeTab) closeEdgeTab.addEventListener('click', closeSidebar);
 
     // Swipe from left edge to open sidebar (mobile)
     let touchStartX = 0;
@@ -1257,6 +1317,25 @@
       if (deltaX > 50) openSidebar();
       touchStartX = -1;
     }, { passive: true });
+
+    // Swipe from close tab (or right edge of sidebar) to close (mobile)
+    let closeTouchStartX = -1;
+    if (closeEdgeTab) {
+      closeEdgeTab.addEventListener('touchstart', (e) => {
+        closeTouchStartX = e.touches[0].clientX;
+      }, { passive: true });
+      closeEdgeTab.addEventListener('touchmove', (e) => {
+        if (closeTouchStartX < 0) return;
+        const deltaX = e.touches[0].clientX - closeTouchStartX;
+        if (deltaX > 50) {
+          closeSidebar();
+          closeTouchStartX = -1;
+        }
+      }, { passive: true });
+      closeEdgeTab.addEventListener('touchend', () => {
+        closeTouchStartX = -1;
+      }, { passive: true });
+    }
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) closeSidebar();

@@ -1,6 +1,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
+const helmet = require('helmet');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const cors = require('cors');
@@ -8,6 +9,19 @@ const NodeCache = require('node-cache');
 const fs = require('fs');
 
 const app = express();
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://maps.googleapis.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: ["'self'", "https://maps.googleapis.com", "https://*.googleapis.com"],
+      frameSrc: ["https://www.google.com"],
+    },
+  },
+}));
 const PORT = process.env.PORT || 3001;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
@@ -17,13 +31,13 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const CONFIG = {
   // Max geocoding API calls per day before we stop geocoding new addresses
   // 1000/day within Google's $200 free monthly credit
-  GEOCODE_DAILY_LIMIT: parseInt(process.env.GEOCODE_DAILY_LIMIT || '1000'),
+  GEOCODE_DAILY_LIMIT: parseInt(process.env.GEOCODE_DAILY_LIMIT || '1000', 10),
 
   // Max requests to /api/calls per IP per minute
-  RATE_LIMIT_PER_IP_PER_MIN: parseInt(process.env.RATE_LIMIT_PER_IP || '10'),
+  RATE_LIMIT_PER_IP_PER_MIN: parseInt(process.env.RATE_LIMIT_PER_IP || '10', 10),
 
   // Max total requests to /api/calls per minute across ALL users
-  RATE_LIMIT_GLOBAL_PER_MIN: parseInt(process.env.RATE_LIMIT_GLOBAL || '60'),
+  RATE_LIMIT_GLOBAL_PER_MIN: parseInt(process.env.RATE_LIMIT_GLOBAL || '60', 10),
 };
 
 // ─── Turso DB via HTTP v2 (avoids /v1/jobs migration check on free plans) ─────
@@ -65,11 +79,15 @@ async function tursoExecute(baseUrl, authToken, sql, args = []) {
   }
   const result = first.response?.result;
   if (!result) return { rows: [] };
+  const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
   const cols = (result.cols || []).map((c) => c.name);
   const rows = (result.rows || []).map((row) => {
     const obj = {};
     row.forEach((cell, i) => {
-      obj[cols[i]] = cell?.value ?? null;
+      const key = cols[i];
+      if (key && !DANGEROUS_KEYS.includes(key)) {
+        obj[key] = cell?.value ?? null;
+      }
     });
     return obj;
   });
@@ -458,7 +476,7 @@ app.get('/api/calls', rateLimitMiddleware, async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('Error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch calls', message: err.message });
+    res.status(500).json({ error: 'Failed to fetch calls' });
   }
 });
 
@@ -471,7 +489,8 @@ app.get('/health', async (req, res) => {
       const { rows } = await db.execute('SELECT COUNT(*) as count FROM geocodes');
       dbStats = { connected: true, cachedAddresses: rows[0].count };
     } catch (err) {
-      dbStats = { connected: false, error: err.message };
+      console.error('Health check DB error:', err.message);
+      dbStats = { connected: false };
     }
   }
 
@@ -497,11 +516,23 @@ app.get('/health', async (req, res) => {
 
 // ─── Serve frontend ───────────────────────────────────────────────────────────
 
+/** Sanitize backend URL from headers to prevent XSS via Host/X-Forwarded-Host injection */
+function sanitizeBackendUrl(protocol, host) {
+  const safeProtocol = /^https?$/.test(protocol) ? protocol : 'https';
+  // Host: alphanumeric, dots, hyphens, colons (for port); reject anything that could break JS string
+  const safeHost = (host || '')
+    .split(',')[0]
+    .trim()
+    .replace(/[^a-zA-Z0-9.\-:_]/g, '');
+  if (!safeHost) return 'http://localhost:3001';
+  return `${safeProtocol}://${safeHost}`;
+}
+
 app.get('/', (req, res) => {
   const frontendPath = path.join(__dirname, 'index.html');
-  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-  const host = req.headers['x-forwarded-host'] || req.headers.host;
-  const backendUrl = `${protocol}://${host}`;
+  const protocol = (req.headers['x-forwarded-proto'] || req.protocol || 'https').toLowerCase();
+  const host = req.headers['x-forwarded-host'] || req.headers.host || '';
+  const backendUrl = sanitizeBackendUrl(protocol, host);
   let html = fs.readFileSync(frontendPath, 'utf8');
   html = html.replace(
     "const BACKEND_URL = window.BACKEND_URL || 'http://localhost:3001';",

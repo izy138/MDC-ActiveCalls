@@ -16,7 +16,7 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
 const CONFIG = {
   // Max geocoding API calls per day before we stop geocoding new addresses
-  // 200/day = ~$0.10/day worst case — well within Google's $200 free monthly credit
+  // 1000/day within Google's $200 free monthly credit
   GEOCODE_DAILY_LIMIT: parseInt(process.env.GEOCODE_DAILY_LIMIT || '1000'),
 
   // Max requests to /api/calls per IP per minute

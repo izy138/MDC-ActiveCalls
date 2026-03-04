@@ -78,8 +78,8 @@
       font-size: 11px;
       font-weight: 300;
       letter-spacing: 0.2em;
-      color: var(--muted);
-      margin-top: 2px;
+      color: #8aa0b8;
+      margin-top: 8px;
     }
 
     .header-right {
@@ -152,6 +152,32 @@
       display: flex;
       gap: 6px;
       flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-filters {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .sidebar-close {
+      display: none;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .sidebar-close:hover {
+      background: var(--border);
+      color: var(--text);
     }
 
     .filter-btn {
@@ -532,6 +558,190 @@
     .info-panel-body li {
       margin-bottom: 4px;
     }
+
+    /* ── Mobile: Sidebar as toggle overlay ── */
+    .sidebar-toggle {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sidebar-toggle:hover {
+      background: var(--border);
+      border-color: var(--accent2);
+      color: var(--accent2);
+    }
+    .sidebar-toggle svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1500;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .sidebar-backdrop.visible {
+      opacity: 1;
+    }
+
+    .sidebar-edge-tab {
+      display: none;
+      position: fixed;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 64px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: none;
+      border-radius: 0 8px 8px 0;
+      z-index: 1400;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px 0 0;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.3);
+      transition: background 0.2s, box-shadow 0.2s;
+      color: var(--text);
+    }
+    .sidebar-edge-tab:hover {
+      background: var(--border);
+      box-shadow: 2px 0 12px rgba(0,0,0,0.4);
+    }
+    .sidebar-edge-tab:active {
+      background: var(--border);
+    }
+    .sidebar-edge-tab svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar-toggle {
+        display: flex;
+      }
+
+      .sidebar-edge-tab {
+        display: flex;
+      }
+      body.sidebar-open .sidebar-edge-tab {
+        display: none;
+      }
+
+      .main {
+        position: relative;
+      }
+
+      #sidebar {
+        position: fixed;
+        top: 40px;
+        left: 0;
+        bottom: 0;
+        width: min(340px, 85vw);
+        max-width: 340px;
+        z-index: 1600;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.4);
+      }
+
+      body.sidebar-open #sidebar {
+        transform: translateX(0);
+      }
+
+      body.sidebar-open .sidebar-backdrop {
+        display: block;
+        opacity: 1;
+      }
+
+      .sidebar-backdrop {
+        display: block;
+        pointer-events: none;
+      }
+      body.sidebar-open .sidebar-backdrop {
+        pointer-events: auto;
+      }
+
+      #map {
+        flex: 1;
+        min-width: 0;
+      }
+
+      header {
+        flex-wrap: wrap;
+        padding: 6px 12px;
+        gap: 10px;
+      }
+      .logo-block {
+        flex: 1 1 100%;
+        gap: 8px;
+      }
+      .logo-icon,
+      .logo-icon svg {
+        width: 28px;
+        height: 28px;
+      }
+      header h1 {
+        font-size: 14px;
+      }
+      header h1 span {
+        font-size: 9px;
+        margin-top: 4px;
+      }
+      .header-right {
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .sidebar-toggle {
+        width: 34px;
+        height: 34px;
+      }
+      .sidebar-toggle svg {
+        width: 18px;
+        height: 18px;
+      }
+      .info-btn {
+        padding: 4px 8px;
+        font-size: 11px;
+      }
+      .status-pill {
+        font-size: 11px;
+      }
+      #total-count {
+        font-size: 12px;
+      }
+      #last-update {
+        display: none;
+      }
+      .legend {
+        left: auto;
+        right: 7px;
+        bottom: 24px;
+        padding: 8px 12px;
+        font-size: 11px;
+      }
+      .legend-item {
+        font-size: 12px;
+      }
+
+      .sidebar-close {
+        display: block;
+      }
+    }
   </style>
 </head>
 <body>
@@ -550,6 +760,11 @@
       <h1>Miami-Dade Fire Rescue and Traffic Calls<span>Live Dispatch — Active Calls</span></h1>
     </div>
   </div>
+  <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle call list">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
   <div class="header-right">
     <button class="info-btn" id="info-btn">Info</button>
     <div class="status-pill">
@@ -584,13 +799,22 @@
   </div>
 </div>
 
+<div class="sidebar-backdrop" id="sidebar-backdrop" aria-hidden="true"></div>
+<button class="sidebar-edge-tab" id="sidebar-edge-tab" aria-label="Open call list" type="button">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="9 18 15 12 9 6"/>
+  </svg>
+</button>
 <div class="main">
   <div id="sidebar">
     <div class="sidebar-toolbar">
-      <button class="filter-btn active" data-type="ALL">All</button>
-      <button class="filter-btn" data-type="TRAFFIC ACCIDENT">Traffic</button>
-      <button class="filter-btn" data-type="FIRE STRUCTURE">Fire</button>
-      <button class="filter-btn" data-type="MEDICAL">Medical</button>
+      <div class="sidebar-filters">
+        <button class="filter-btn active" data-type="ALL">All</button>
+        <button class="filter-btn" data-type="TRAFFIC ACCIDENT">Traffic</button>
+        <button class="filter-btn" data-type="FIRE STRUCTURE">Fire</button>
+        <button class="filter-btn" data-type="MEDICAL">Medical</button>
+      </div>
+      <button class="sidebar-close" id="sidebar-close" aria-label="Close call list">✕</button>
     </div>
     <div id="call-list"></div>
   </div>
@@ -677,9 +901,14 @@
     }).addTo(map);
 
     // Fit view exactly to bounds once the map container has real dimensions (fixes flex/layout timing)
+    const MOBILE_LEFT_PADDING = 72;
     function zoomToBounds() {
       map.invalidateSize();
-      map.fitBounds(MAP_BOUNDS, { maxZoom: MAP_ZOOM_MAX, animate: false });
+      const fitOptions = { maxZoom: MAP_ZOOM_MAX, animate: false };
+      if (window.matchMedia('(max-width: 768px)').matches) {
+        fitOptions.paddingTopLeft = [MOBILE_LEFT_PADDING, 0];
+      }
+      map.fitBounds(MAP_BOUNDS, fitOptions);
     }
     map.whenReady(function() {
       requestAnimationFrame(function() {
@@ -708,6 +937,7 @@
 
     document.getElementById('refresh-btn').addEventListener('click', () => fetchCalls(true));
     setupFilters();
+    setupSidebarToggle();
 
     fetchCalls();
     setInterval(fetchCalls, REFRESH_INTERVAL);
@@ -876,6 +1106,10 @@
         map.setView([resolved.coords.lat, resolved.coords.lng], 15);
         openPopupForCall(call);
         setActiveCard(card);
+        if (window.matchMedia('(max-width: 768px)').matches) {
+          document.body.classList.remove('sidebar-open');
+          document.getElementById('sidebar-backdrop')?.setAttribute('aria-hidden', 'true');
+        }
       });
     }
 
@@ -983,6 +1217,50 @@
         if (e.key === 'Escape') closeInfo();
       });
     }
+  }
+
+  function setupSidebarToggle() {
+    const toggle = document.getElementById('sidebar-toggle');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const edgeTab = document.getElementById('sidebar-edge-tab');
+
+    function openSidebar() {
+      document.body.classList.add('sidebar-open');
+      backdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeSidebar() {
+      document.body.classList.remove('sidebar-open');
+      backdrop.setAttribute('aria-hidden', 'true');
+    }
+
+    function toggleSidebar() {
+      document.body.classList.toggle('sidebar-open');
+      backdrop.setAttribute('aria-hidden', document.body.classList.contains('sidebar-open') ? 'false' : 'true');
+    }
+
+    const closeBtn = document.getElementById('sidebar-close');
+    if (toggle) toggle.addEventListener('click', toggleSidebar);
+    if (backdrop) backdrop.addEventListener('click', closeSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (edgeTab) edgeTab.addEventListener('click', openSidebar);
+
+    // Swipe from left edge to open sidebar (mobile)
+    let touchStartX = 0;
+    document.addEventListener('touchstart', (e) => {
+      if (e.touches[0].clientX < 30) touchStartX = e.touches[0].clientX;
+      else touchStartX = -1;
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      if (touchStartX < 0 || document.body.classList.contains('sidebar-open')) return;
+      const deltaX = e.changedTouches[0].clientX - touchStartX;
+      if (deltaX > 50) openSidebar();
+      touchStartX = -1;
+    }, { passive: true });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) closeSidebar();
+    });
   }
 
   document.addEventListener('DOMContentLoaded', initMap);

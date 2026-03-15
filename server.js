@@ -250,7 +250,10 @@ async function scrapeCalls() {
       const fc      = $(cells[1]).text().trim();
       const incType = $(cells[2]).text().trim();
       const address = $(cells[3]).text().trim();
-      const units   = cells[4] ? $(cells[4]).text().trim() : '';
+      const units   = cells[4]
+        ? ($(cells[4]).children().map((_, el) => $(el).text().trim()).get().filter(Boolean).join(' ')
+            || $(cells[4]).text().trim())
+        : '';
       if (address && incType) {
         calls.push({ rcvd, fc, incType, address, units, zone, id: `${rcvd}-${address}` });
       }
@@ -273,7 +276,10 @@ async function scrapeCalls() {
         const fc      = $(cells[1]).text().trim();
         const incType = $(cells[2]).text().trim();
         const address = $(cells[3]).text().trim();
-        const units   = cells[4] ? $(cells[4]).text().trim() : '';
+        const units   = cells[4]
+          ? ($(cells[4]).children().map((_, el) => $(el).text().trim()).get().filter(Boolean).join(' ')
+              || $(cells[4]).text().trim())
+          : '';
         if (address && incType) {
           calls.push({ rcvd, fc, incType, address, units, zone: currentZone, id: `${rcvd}-${address}` });
         }

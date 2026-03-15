@@ -277,10 +277,63 @@
     }
 
     .call-units {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      margin-top: 4px;
+      align-items: center;
+    }
+
+    .unit-badge {
       font-family: var(--read);
-      font-size: 11px;
+      font-size: 10px;
+      font-weight: 600;
       color: var(--muted);
-      margin-top: 3px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 3px;
+      padding: 1px 5px;
+      white-space: nowrap;
+      letter-spacing: 0.03em;
+    }
+
+    .units-more-btn {
+      font-family: var(--read);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--accent2);
+      background: none;
+      border: 1px solid var(--accent2);
+      border-radius: 3px;
+      padding: 1px 5px;
+      cursor: pointer;
+      white-space: nowrap;
+      line-height: inherit;
+      opacity: 0.8;
+      transition: opacity 0.15s;
+    }
+
+    .units-more-btn:hover {
+      opacity: 1;
+    }
+
+    #units-tooltip {
+      position: fixed;
+      z-index: 9999;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      display: none;
+      flex-wrap: wrap;
+      gap: 3px;
+      max-width: 220px;
+      pointer-events: none;
+    }
+
+    #units-tooltip.visible {
+      display: flex;
     }
 
     .call-time {
@@ -436,6 +489,24 @@
     .info-window {
       padding: 12px 14px;
       min-width: 220px;
+      max-width: 260px;
+    }
+
+    .iw-units-row {
+      font-family: var(--read);
+      font-size: 12px;
+      color: #4a6080;
+      margin-bottom: 3px;
+    }
+
+    .iw-units-row .iw-units-label {
+      margin-bottom: 4px;
+    }
+
+    .iw-units-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
     }
 
     .iw-type {
@@ -799,6 +870,8 @@
 </head>
 <body>
 
+<div id="units-tooltip"></div>
+
 <header>
   <div class="logo-block">
     <div class="logo-icon">
@@ -1065,6 +1138,7 @@
 
       const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(map);
       marker.bindPopup(buildPopupContent(call, approximate), { className: 'custom-popup' });
+      marker.on('popupopen', e => initPopupUnits(e.popup.getElement()));
 
       // Open info on hover
       marker.on('mouseover', () => {
@@ -1087,6 +1161,10 @@
     const sourceBadge = call.source === 'FHP'
       ? '<span style="font-size:10px;background:rgba(255,170,0,0.2);color:#ffaa00;padding:2px 6px;border-radius:2px;margin-left:6px">FHP</span>'
       : '<span style="font-size:10px;background:#1a2535;color:#ff6b35;padding:2px 6px;border-radius:2px;margin-left:6px">MDFR</span>';
+
+    const rawUnits = (call.units || '').trim();
+    const safeUnits = rawUnits.replace(/"/g, '&quot;');
+
     return `
       <div class="info-window">
         <div class="iw-type" style="color:${color};display:flex;align-items:center">${call.incType}${sourceBadge}</div>
@@ -1096,9 +1174,67 @@
         ${call.fc ? `<div class="iw-row"><span>CODE</span><span>${call.fc}</span></div>` : ''}
         <div class="iw-row"><span>RECEIVED</span><span>${call.rcvd || call.received || '—'}</span></div>
         ${call.zone !== 'FHP' ? `<div class="iw-row"><span>ZONE</span><span>${call.zone}</span></div>` : ''}
-        <div class="iw-row"><span>UNITS</span><span>${call.units || '—'}</span></div>
+        <div class="iw-units-row">
+          <div class="iw-units-label">UNITS</div>
+          <div class="iw-units-badges" data-units="${safeUnits}"></div>
+        </div>
       </div>
     `;
+  }
+
+  const POPUP_UNITS_DEFAULT = 4;
+  const unitsTooltip = document.getElementById('units-tooltip');
+
+  function hideUnitsTooltip() {
+    unitsTooltip.classList.remove('visible');
+    unitsTooltip.innerHTML = '';
+  }
+
+  function showUnitsTooltip(btn, hiddenUnits) {
+    unitsTooltip.innerHTML = '';
+    hiddenUnits.forEach(u => {
+      const s = document.createElement('span');
+      s.className = 'unit-badge';
+      s.textContent = u;
+      unitsTooltip.appendChild(s);
+    });
+    const rect = btn.getBoundingClientRect();
+    unitsTooltip.classList.add('visible');
+    const tooltipW = unitsTooltip.offsetWidth;
+    let left = rect.left;
+    if (left + tooltipW > window.innerWidth - 8) left = window.innerWidth - tooltipW - 8;
+    unitsTooltip.style.left = `${left}px`;
+    unitsTooltip.style.top = `${rect.bottom + 6}px`;
+  }
+
+  function initPopupUnits(container) {
+    const badgesEl = container.querySelector('.iw-units-badges[data-units]');
+    if (!badgesEl) return;
+    const raw = (badgesEl.dataset.units || '').trim();
+    const unitList = raw && raw !== '—' ? raw.split(/[\s,]+/).filter(Boolean) : [];
+
+    badgesEl.innerHTML = '';
+    if (!unitList.length) {
+      badgesEl.innerHTML = '<span style="color:#c8d8e8">—</span>';
+      return;
+    }
+
+    unitList.slice(0, POPUP_UNITS_DEFAULT).forEach(u => {
+      const s = document.createElement('span');
+      s.className = 'unit-badge';
+      s.textContent = u;
+      badgesEl.appendChild(s);
+    });
+
+    if (unitList.length > POPUP_UNITS_DEFAULT) {
+      const hidden = unitList.slice(POPUP_UNITS_DEFAULT);
+      const btn = document.createElement('button');
+      btn.className = 'units-more-btn';
+      btn.textContent = `+${hidden.length}`;
+      btn.addEventListener('mouseenter', () => showUnitsTooltip(btn, hidden));
+      btn.addEventListener('mouseleave', hideUnitsTooltip);
+      badgesEl.appendChild(btn);
+    }
   }
 
   function openPopupForCall(call) {
@@ -1150,13 +1286,46 @@
       <div>
         <div class="call-type ${typeClass}">${call.incType}</div>
         <div class="call-address">${call.address}</div>
-        <div class="call-units">${call.units || '—'}</div>
+        <div class="call-units"></div>
       </div>
       <div>
         <div class="call-time">${call.rcvd || call.received || ''}</div>
         ${call.fc ? `<div class="call-fc">${call.fc}</div>` : ''}
       </div>
     `;
+
+    const UNITS_DEFAULT = 4;
+    const unitsContainer = card.querySelector('.call-units');
+    const rawUnits = (call.units || '').trim();
+    if (rawUnits && rawUnits !== '—') {
+      const unitList = rawUnits.split(/[\s,]+/).filter(Boolean);
+      const renderUnits = (showAll) => {
+        unitsContainer.innerHTML = '';
+        const visible = showAll ? unitList : unitList.slice(0, UNITS_DEFAULT);
+        visible.forEach(u => {
+          const badge = document.createElement('span');
+          badge.className = 'unit-badge';
+          badge.textContent = u;
+          unitsContainer.appendChild(badge);
+        });
+        if (unitList.length > UNITS_DEFAULT) {
+          const btn = document.createElement('button');
+          btn.className = 'units-more-btn';
+          if (showAll) {
+            btn.textContent = 'less';
+            btn.addEventListener('click', e => { e.stopPropagation(); renderUnits(false); });
+          } else {
+            btn.textContent = `+${unitList.length - UNITS_DEFAULT}`;
+            btn.addEventListener('click', e => { e.stopPropagation(); renderUnits(true); });
+          }
+          unitsContainer.appendChild(btn);
+        }
+      };
+      renderUnits(false);
+    } else {
+      unitsContainer.textContent = '—';
+      unitsContainer.style.cssText = 'font-family:var(--read);font-size:11px;color:var(--muted);margin-top:3px;';
+    }
 
     const resolved = getCoordsForCall(call);
     if (resolved) {

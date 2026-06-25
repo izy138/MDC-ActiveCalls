@@ -368,6 +368,9 @@
     }
 
     .custom-marker { background: none !important; border: none !important; }
+    /* Match Carto dark_all ocean (#262626) so tile seams are not visible as gray lines */
+    .leaflet-container { background: #262626; }
+    .leaflet-container img.leaflet-tile { mix-blend-mode: normal; }
     .leaflet-zoom-animated { transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
     .leaflet-popup-content-wrapper { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; }
     .leaflet-popup-content { margin: 12px 14px; min-width: 180px; }
@@ -1014,6 +1017,19 @@
       if (seenIds.has(c.id)) return false;
       seenIds.add(c.id);
       return true;
+    });
+  }
+
+  // Slight tile overlap prevents sub-pixel gaps between Carto tiles (Chrome/Safari).
+  if (L.Browser.webkit) {
+    const originalInitTile = L.GridLayer.prototype._initTile;
+    L.GridLayer.include({
+      _initTile(tile) {
+        originalInitTile.call(this, tile);
+        const tileSize = this.getTileSize();
+        tile.style.width = `${tileSize.x + 1}px`;
+        tile.style.height = `${tileSize.y + 1}px`;
+      },
     });
   }
 

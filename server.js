@@ -140,14 +140,14 @@ async function initDb() {
 
   if (budgetRows.length > 0) {
     geocodeBudget = { date: today, count: budgetRows[0].count };
-    console.log(`📊 Geocode budget restored: ${geocodeBudget.count}/${CONFIG.GEOCODE_DAILY_LIMIT} used today`);
+    console.log(`Geocode count: ${geocodeBudget.count}/${CONFIG.GEOCODE_DAILY_LIMIT}`);
   } else {
     geocodeBudget = { date: today, count: 0 };
   }
 
   const { rows } = await db.execute('SELECT COUNT(*) as count FROM geocodes');
   const count = rows[0]?.count ?? 0;
-  console.log(`✅ Turso connected — ${count} addresses already cached in DB`);
+  console.log(`Turso DB Total: ${count}`);
 }
 
 // In-memory hot cache on top of Turso (1hr TTL) for speed
@@ -438,8 +438,6 @@ app.get('/api/calls', rateLimitMiddleware, async (req, res) => {
     const cached = callCache.get('calls');
     if (cached) return res.json(cached);
 
-    console.log('Fetching fresh data from Miami-Dade Fire + FHP...');
-
     const [fireResult, fhpResult] = await Promise.allSettled([
       scrapeCalls(),
       scrapeFHPIncidents(),
@@ -454,7 +452,7 @@ app.get('/api/calls', rateLimitMiddleware, async (req, res) => {
       console.error('FHP scrape failed:', fhpResult.reason?.message);
 
     // Geocode only MDFR addresses; FHP incidents have built-in lat/lng and never use the geocode API or count toward budget.
-    console.log(`Fire calls: ${calls.length}, FHP incidents: ${fhp.length}. Geocode (MDFR only): ${geocodeBudget.count}/${CONFIG.GEOCODE_DAILY_LIMIT}`);
+    // console.log(`Fire rescue calls: ${calls.length}, FL Highway Patrol calls: ${fhp.length}. Geocode (MDFR only): ${geocodeBudget.count}/${CONFIG.GEOCODE_DAILY_LIMIT}`);
 
     const geocodedFire = await Promise.all(
       calls.map(async (call) => {
@@ -557,9 +555,9 @@ app.use(express.static(__dirname));
 
 initDb().then(() => {
   app.listen(PORT, () => {
-    console.log(`Miami Fire Map running on port ${PORT}`);
-    console.log(`Geocode daily limit: ${CONFIG.GEOCODE_DAILY_LIMIT} calls`);
-    console.log(`Rate limits: ${CONFIG.RATE_LIMIT_PER_IP_PER_MIN}/min per IP, ${CONFIG.RATE_LIMIT_GLOBAL_PER_MIN}/min global`);
+    // console.log(`Miami Fire Map running on port ${PORT}`);
+    // console.log(`Geocode daily limit: ${CONFIG.GEOCODE_DAILY_LIMIT} calls`);
+    // console.log(`Rate limits: ${CONFIG.RATE_LIMIT_PER_IP_PER_MIN}/min per IP, ${CONFIG.RATE_LIMIT_GLOBAL_PER_MIN}/min global`);
     if (!GOOGLE_API_KEY) console.warn('WARNING: GOOGLE_API_KEY not set. Geocoding will fail.');
   });
 });

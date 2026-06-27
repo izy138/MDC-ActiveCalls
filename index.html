@@ -371,7 +371,6 @@
     /* Match Carto dark_all ocean (#262626) so tile seams are not visible as gray lines */
     .leaflet-container { background: #262626; }
     .leaflet-container img.leaflet-tile { mix-blend-mode: normal; }
-    .leaflet-zoom-animated { transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
     .leaflet-popup-content-wrapper { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; }
     .leaflet-popup-content { margin: 12px 14px; min-width: 180px; }
     .leaflet-popup-tip { background: var(--surface); }
@@ -988,6 +987,7 @@
   const MAP_BOUNDS = L.latLngBounds([MAP_SOUTH, MAP_WEST], [MAP_NORTH, MAP_EAST]);
   const MAP_ZOOM_MIN = 10.39;  // most zoomed out (user can't go further out)
   const MAP_ZOOM_MAX = 14;  // most zoomed in (user can't go further in)
+  const MOBILE_LEFT_PADDING = 72;
 
   // Fallback coords for MDFR calls that couldn't be geocoded — approximate zone centers in Miami-Dade
   const ZONE_CENTERS = {
@@ -1010,6 +1010,48 @@
   let allCalls = [];
   let activeFilter = 'ALL';
   let activeCardEl = null;
+
+  const FOCUS_ZOOM = MAP_ZOOM_MAX;
+
+  function getMapFocusPadding() {
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      return [MOBILE_LEFT_PADDING, 0];
+    }
+    return [0, 0];
+  }
+
+  function focusCallOnMap(lat, lng, onComplete) {
+    if (!map) return;
+    map.closePopup();
+    map.stop();
+    map.invalidateSize({ animate: false });
+    const target = L.latLng(lat, lng);
+    const padding = getMapFocusPadding();
+    const atFocusZoom = map.getZoom() >= FOCUS_ZOOM - 0.25;
+    const zoom = atFocusZoom ? map.getZoom() : FOCUS_ZOOM;
+    const durationMs = atFocusZoom ? 500 : 850;
+
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      map.off('moveend', finish);
+      onComplete?.();
+    };
+    map.once('moveend', finish);
+    setTimeout(finish, durationMs);
+
+    // panTo fails to center after map.stop(); setView and flyTo handle it correctly
+    if (atFocusZoom && !padding[0] && !padding[1]) {
+      map.setView(target, zoom, { animate: true, duration: 0.45 });
+    } else {
+      map.flyTo(target, zoom, {
+        duration: atFocusZoom ? 0.45 : 0.75,
+        easeLinearity: 0.25,
+        paddingTopLeft: padding,
+      });
+    }
+  }
 
   function dedupeCalls(calls) {
     const seenIds = new Set();
@@ -1048,7 +1090,6 @@
     }).addTo(map);
 
     // Fit view exactly to bounds once the map container has real dimensions (fixes flex/layout timing)
-    const MOBILE_LEFT_PADDING = 72;
     function zoomToBounds() {
       map.invalidateSize();
       const fitOptions = { maxZoom: MAP_ZOOM_MAX, animate: false };
@@ -1153,7 +1194,7 @@
       });
 
       const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(map);
-      marker.bindPopup(buildPopupContent(call, approximate), { className: 'custom-popup' });
+      marker.bindPopup(buildPopupContent(call, approximate), { className: 'custom-popup', autoPan: false });
       marker.on('popupopen', e => initPopupUnits(e.popup.getElement()));
 
       // Open info on hover
@@ -1163,8 +1204,7 @@
 
       // Keep existing click behavior (recenter + select sidebar card)
       marker.on('click', () => {
-        map.setView([coords.lat, coords.lng], 15);
-        marker.openPopup();
+        focusCallOnMap(coords.lat, coords.lng, () => marker.openPopup());
         const card = document.querySelector(`.call-card[data-id="${call.id}"]`);
         if (card) setActiveCard(card);
       });
@@ -1346,13 +1386,12 @@
     const resolved = getCoordsForCall(call);
     if (resolved) {
       card.addEventListener('click', () => {
-        map.setView([resolved.coords.lat, resolved.coords.lng], 15);
-        openPopupForCall(call);
-        setActiveCard(card);
         if (window.matchMedia('(max-width: 768px)').matches) {
           document.body.classList.remove('sidebar-open');
           document.getElementById('sidebar-backdrop')?.setAttribute('aria-hidden', 'true');
         }
+        focusCallOnMap(resolved.coords.lat, resolved.coords.lng, () => openPopupForCall(call));
+        setActiveCard(card);
       });
     }
 
